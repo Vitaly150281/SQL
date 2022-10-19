@@ -45,18 +45,20 @@ SELECT a.name, AVG(t.duration)
  GROUP BY a.id;
 
 --все исполнители, которые не выпустили альбомы в 2020 году
-SELECT nickname 
-  FROM artists a 
-       JOIN artistsalbums a2 
-       ON a.id = a2.artist_id 
+SELECT *
+  FROM artists
+ WHERE nickname NOT IN 
+       (SELECT nickname 
+          FROM artists a 
+               JOIN artistsalbums a2 
+               ON a.id = a2.artist_id 
        
-       JOIN albums a3 
-       ON a2.album_id = a3.id      
- GROUP BY nickname, a3.release_album
-HAVING a3.release_album <> '2020';
+               JOIN albums a3 
+               ON a2.album_id = a3.id      
+         WHERE a3.release_album = '2020');
 
 --названия сборников, в которых присутствует конкретный исполнитель (выберите сами)
-SELECT c.name 
+SELECT DISTINCT c.name 
   FROM collections c
        JOIN collectionstracks ct 
        ON c.id = ct.collection_id 
@@ -72,8 +74,7 @@ SELECT c.name
        
        JOIN artists a3 
        ON a2.artist_id = a3.id       
- WHERE a3.nickname = 'Mr. Credo'
- GROUP BY c.name;
+ WHERE a3.nickname = 'Mr. Credo';
 
 --название альбомов, в которых присутствуют исполнители более 1 жанра
 SELECT a.name 
@@ -113,18 +114,19 @@ SELECT a.nickname
  WHERE t.duration = (SELECT MIN(duration) FROM tracks);
 
 --название альбомов, содержащих наименьшее количество треков
-SELECT a_name 
-  FROM (SELECT a.name a_name, COUNT(t.id) t_count 
-          FROM albums a 
-               JOIN tracks t 
-               ON a.id = t.album_id 
-         GROUP BY a.name) alb
- WHERE t_count = 
-       (SELECT MIN(c) 
-          FROM (SELECT album_id, COUNT(album_id) c 
-                  FROM tracks 
-                 GROUP BY album_id) tr)
- ORDER BY a_name;
+SELECT a.name, COUNT(t.name) 
+  FROM albums a 
+       JOIN tracks t 
+       ON a.id = t.album_id
+ GROUP BY a.name
+HAVING COUNT(t.name) = 
+       (SELECT COUNT(t2.name)
+          FROM albums a2
+               JOIN tracks t2
+               ON a2.id = t2.album_id
+         GROUP BY a2.name
+         ORDER BY COUNT(t2.name)
+         LIMIT 1);
 
 
 
